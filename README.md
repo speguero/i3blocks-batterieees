@@ -1,7 +1,10 @@
 # i3blocks-batterieees
 
-`batterieees` is an [i3blocks](https://github.com/vivien/i3blocks) battery status indicator that reports a total percentage of available power based on the sum of available power in every present battery of a given laptop.
+`batterieees` is an [`i3blocks`](https://github.com/vivien/i3blocks) status indicator that reports a percentage of available battery power on your machine, based upon a single battery or a total sum of available power between all present batteries.
 
+---
+
+- [Requirements](#requirements)
 - [Disclaimer](#disclaimer)
 - [Install](#install)
 - [Arguments](#arguments)
@@ -9,9 +12,15 @@
 - [Contributing](#contributing)
 - [License](#license)
 
+## Requirements
+
+- Linux
+- OpenBSD
+- Python v3.5+
+
 ## Disclaimer
 
-Due to issues of inaccuracy as a result of the shortcomings of battery technology, `batterieees` does not report remaining time data.
+Due to the nature of battery technology and issues of inaccuracy from estimated times of remaining life before loss of power, `batterieees` does not, and will never, report such information.
 
 ## Install
 
@@ -19,7 +28,7 @@ __1)__ Copy `batterieees` to a directory of your choosing.
 
 __2)__ Edit your `i3blocks` configuration file and add the following configuration:
 
-```
+```ini
 [batterieees]
 command=/path/to/batterieees
 label=B
@@ -28,7 +37,7 @@ interval=1
 
 Specify the full path of `batterieees` in the `command` argument.
 
-__3)__ Refresh your i3 or Sway session to begin using `batterieees`.
+__3)__ Refresh your i3 or Sway session and enjoy.
 
 ## Arguments
 
@@ -36,7 +45,7 @@ Argument | Description
 ---      | ---
 [none]   | Defaults to the `-t` argument.
 `-t`     | Enable text-based status indicators.
-`-i`     | Enable icon-based status indicators, which require the **Font Awesome** font.
+`-i`     | Enable icon-based status indicators, which require the [Font Awesome](https://github.com/FortAwesome/Font-Awesome) font.
 
 ## Runtime
 
@@ -48,8 +57,7 @@ Status (Text) | Status (Icon)  | Meaning
 `DIS`         | Battery        | Discharging
 `FUL`         | Power Plug     | Full
 `PLG`         | Power Plug     | Plugged In
-`???`         | Question Mark  | Unknown
-`X`           | X              | No Battery Present or Platform Not Supported
+`???`         | Question Mark  | Unknown, No Battery Present or Platform Not Supported
 
 These statuses are displayed along with the percentage of total available power in the following fashion:
 
