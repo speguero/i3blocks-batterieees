@@ -15,8 +15,8 @@
 ## Requirements
 
 - Linux
-- OpenBSD (`adm`)
-- FreeBSD (`adm`)
+- OpenBSD
+- FreeBSD
 - Python v3.5+
 
 ## Disclaimer
