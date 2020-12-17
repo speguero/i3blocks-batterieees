@@ -46,12 +46,12 @@ def main(block_style):
 	else:
 		block_output = '{} {}%\n'.format(block_output_pwr_stat[0], batt_percent)
 
-	print(block_output)  # Example output: 'FUL 100%\n'
+	print(block_output)
 
-	if batt_stat is True:
-		print(block_output_fg_color)  # Example output: '#FFFFFF\n'
+	if batt_stat == True and block_output_fg_color != None:
+		print(block_output_fg_color)
 
-		if batt_percent <= 10 and ac_stat == False and batt_stat == True:
+		if batt_percent <= 10 and ac_stat == False:
 			exit(33)  # Display yellow background color in blocklet.
 	
 	exit()
@@ -60,8 +60,9 @@ def get_ac_stat():
 
 	# Determines whether or not A/C power is connected.
 
-	# Linux:
-	if sys.platform == 'linux':
+	os = platform.system().lower()
+
+	if os == 'linux':
 		
 		rfile_ac_stat = None
 		fpath_ac_data = '/sys/class/power_supply/AC/online'
@@ -83,9 +84,7 @@ def get_ac_stat():
 			ac_stat = None
 			return ac_stat
 	
-	# OpenBSD:
-	elif re.search(r'^openbsd.*$', sys.platform) is not None:
-
+	if os == 'openbsd' or os == 'freebsd':
 		rcmd_ac_stat     = None
 		ac_plugged_codes = [1]
 		
@@ -105,18 +104,17 @@ def get_ac_stat():
 			ac_stat = None
 			return ac_stat
 	
-	else:
-		ac_stat = None
-		return ac_stat
+	ac_stat = None
+	return ac_stat
 
 def get_batt_percent():
 
 	# Determines percentage of battery life or total
 	# sum of life between all present batteries.
+	
+	os = platform.system().lower()
 
-	# Linux:
-	if sys.platform == 'linux':
-
+	if os == 'linux':
 		batt_percent          = []
 		batt_percent_totalsum = None
 		rfile_batt_percent    = None
@@ -137,14 +135,16 @@ def get_batt_percent():
 					
 				batt_percent_totalsum = int(sum(batt_percent) / len(batt_percent))
 				batt_percent          = batt_percent_totalsum
-				return batt_percent
+
+				if -1 < batt_percent < 101:
+					return batt_percent
+				else:
+					raise
 		except:
 			batt_percent = False
 			return batt_percent
 	
-	# OpenBSD:
-	elif re.search(r'^openbsd.*$', sys.platform) is not None:
-
+	if os == 'openbsd' or os == 'freebsd':
 		batt_percent      = None
 		rcmd_batt_percent = None
 		
@@ -152,22 +152,25 @@ def get_batt_percent():
 			rcmd_batt_percent = subprocess.run(['apm', '-l'], stdout=subprocess.PIPE)
 			batt_percent      = rcmd_batt_percent.stdout.decode('utf-8')
 			batt_percent      = int(batt_percent)
-			return batt_percent
+
+			if 0 <= batt_percent <= 100:
+				return batt_percent
+			else:
+				raise
 		except:
 			batt_percent = False
 			return batt_percent
 	
-	else:
-		batt_percent = None
-		return batt_percent
+	batt_percent = None
+	return batt_percent
 
 def get_batt_stat():
 
 	# Determines whether one or more batteries are present.
+	
+	os = platform.system().lower()
 
-	# Linux:
-	if sys.platform == 'linux':
-
+	if os == 'linux':
 		batt_stat         = []
 		rfile_batt_stat   = None
 		dpath_batt_data   = '/sys/class/power_supply/BAT*'
@@ -186,9 +189,7 @@ def get_batt_stat():
 			batt_stat = False
 			return batt_stat
 	
-	# OpenBSD:
-	elif re.search(r'^openbsd.*$', sys.platform) is not None:
-
+	if os == 'openbsd':
 		batt_stat             = None
 		rcmd_batt_stat        = None
 		batt_notpresent_codes = [4, 255]
@@ -198,8 +199,7 @@ def get_batt_stat():
 			batt_stat      = int(rcmd_batt_stat.stdout.decode('utf-8'))
 
 			if batt_stat in batt_notpresent_codes:
-				batt_stat = False
-				return batt_stat
+				raise
 			else:
 				batt_stat = True
 				return batt_stat
@@ -207,9 +207,26 @@ def get_batt_stat():
 			batt_stat = False
 			return batt_stat
 	
-	else:
-		batt_stat = None
-		return batt_stat
+	if os == 'freebsd':
+		batt_stat          = None
+		rcmd_batt_stat     = None
+		batt_present_codes = [0, 1, 2, 3]
+		
+		try:
+			rcmd_batt_stat = subprocess.run(['apm', '-b'], stdout=subprocess.PIPE)
+			batt_stat      = int(rcmd_batt_stat.stdout.decode('utf-8'))
+
+			if batt_stat in batt_present_codes:
+				batt_stat = True
+				return batt_stat
+			else:
+				raise
+		except:
+			batt_stat = False
+			return batt_stat
+	
+	batt_stat = None
+	return batt_stat
 
 def get_block_output_pwr_stat(batt_stat, ac_stat, batt_percent, style):
 
@@ -235,10 +252,10 @@ def get_block_output_pwr_stat(batt_stat, ac_stat, batt_percent, style):
 	block_indicator_unknown     = '???'              # Question Mark
 
 	try:
-		if batt_stat == None:
+		if batt_stat == None or batt_percent == None:
 			return [block_indicator_pns, False]
 
-		elif batt_stat == False:
+		elif batt_stat == False or batt_percent == False:
 			return [block_indicator_nbf, False]
 
 		elif ac_stat == True and batt_stat == True and 95 <= batt_percent <= 100:
@@ -283,7 +300,10 @@ def get_block_fg_color(batt_percent):
 	# indicates range of available battery life.
 
 	try:
-		if batt_percent < 20:
+		if batt_percent == False or batt_percent == None:
+			raise
+
+		if 0 <= batt_percent < 20:
 			return '#FF0000\n'
 
 		elif batt_percent < 45:
@@ -297,6 +317,9 @@ def get_block_fg_color(batt_percent):
 
 		elif 95 <= batt_percent <= 100:
 			return '#00FF00\n'
+
+		else:
+			raise
 	except:
 		return None
 
@@ -310,7 +333,7 @@ def process_args(block_style):
 
 if __name__ == '__main__':
 	import glob
-	import re
+	import platform
 	import sys
 	import subprocess
 	
